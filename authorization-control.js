@@ -6,7 +6,7 @@ const express = require('express');
 const bodyparser = require('body-parser');
 const mongo = require('mongodb').MongoClient;
 const ObjectID = require('mongodb').ObjectID;
-const dbUrl = 'mongodb://localhost:27017/swvldb';
+const dbUrl = `mongodb://localhost:${process.argv[3]}/swvldb`;
 const hasProp = Object.prototype.hasOwnProperty;
 const app = express();
 
