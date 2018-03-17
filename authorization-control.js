@@ -4,116 +4,17 @@
 /* global require */
 const express = require('express');
 const bodyparser = require('body-parser');
-const mongo = require('mongodb').MongoClient;
 const ObjectID = require('mongodb').ObjectID;
+const MongoCollection = require('./mongo-collection');
 const dbUrl = `mongodb://localhost:${process.argv[3]}/swvldb`;
 const hasProp = Object.prototype.hasOwnProperty;
 const app = express();
 
-app.use(bodyparser.json());
-app.use(bodyparser.urlencoded({extended: false}));
-
-/** Class representing a Mongo collection. */
-class MongoCollection {
-  /**
-     * Creates a Mongo collection.
-     * @param {string} url - The url of the Mongo database.
-     * @param {string} collectionName - The name of the collection to work on.
-     */
-  constructor(url, collectionName) {
-    /** @member {string} */
-    this.url = url;
-
-    /** @member {string} */
-    this.collectionName = collectionName;
-  }
-
-  /**
-     * Inserts a document into the Mongo collection.
-     * @param {object} doc - The document to be inserted.
-     * @param {object} httpRes - The http response to write over.
-     */
-  insert(doc, httpRes) {
-    mongo.connect(this.url, ((err, client) => {
-      if (err) {
-        sendInternalError(httpRes);
-        throw err;
-      }
-      let docs = client.db('swvldb').collection(this.collectionName);
-      docs.insert(doc, ((err, result) => {
-        if (err) {
-          sendInternalError(httpRes);
-          throw err;
-        } else {
-          httpRes.writeHead(200, {'Content-Type': 'application/json'});
-          httpRes.end(JSON.stringify(result.ops[0]));
-        }
-        client.close();
-      }));
-    }));
-  }
-
-  /**
-     * Finds documents into the Mongo collection.
-     * @param {object} query - The query object to be run over the collection.
-     * @param {object} project - The projection object to get specific fields.
-     * @param {object} httpRes - The http response to write over.
-     * @param {function} callback - The callback function to call with the find
-      results, and any additional args.
-     * @param {string} args - Additional argument to pass to the @param callback.
-     */
-  find(query, project, httpRes, callback, args = null) {
-    mongo.connect(this.url, ((err, client) => {
-      if (err) {
-        sendInternalError(httpRes);
-        throw err;
-      }
-      let docs = client.db('swvldb').collection(this.collectionName);
-      docs.find(query).project(project).toArray((err, result) => {
-        if (err) {
-          sendInternalError(httpRes);
-          throw err;
-        } else {
-          callback(result, httpRes, args);
-        }
-        client.close();
-      });
-    }));
-  }
-
-  /**
-     * Updates documents into the Mongo collection.
-     * @param {object} query - The query object to be run over the collection.
-     * @param {object} update - The update query to be applied.
-     * @param {object} httpRes - The http response to write over.
-     */
-  update(query, update, httpRes) {
-    mongo.connect(this.url, ((err, client) => {
-      if (err) {
-        sendInternalError(httpRes);
-        throw err;
-      }
-      let docs = client.db('swvldb').collection(this.collectionName);
-      docs.updateOne(query, update, ((err, result) => {
-        if (err) {
-          sendInternalError(httpRes);
-          throw err;
-        } else {
-          if (result.result.n === 0) { // # Matched docs === 0
-            sendNotFound(httpRes);
-          } else {
-            httpRes.writeHead(204);
-            httpRes.end();
-          }
-        }
-        client.close();
-      }));
-    }));
-  }
-}
-
 const resources = new MongoCollection(dbUrl, 'resources');
 const groups = new MongoCollection(dbUrl, 'groups');
+
+app.use(bodyparser.json());
+app.use(bodyparser.urlencoded({extended: false}));
 
 const sendOneObj = function writeOneObj(result, httpRes) {
   httpRes.writeHead(200, {'Content-Type': 'application/json'});
@@ -144,9 +45,7 @@ const getRsourceNames = function qResourceNames(result, httpRes) {
 };
 
 const isAuthorized = function qAuthorization(result, httpRes, qUserId) {
-  if (result.length === 0) {
-    sendNotFound(httpRes);
-  } else {
+  if (result.length > 0) {
     let query = { $and: [{ userIds: { $in: [{ userId: qUserId }] } },
       { resourceIds: { $in: [{ resourceId: result[0]['_id'].toString() }] } }] };
     let fields = {_id: 1};
@@ -162,16 +61,6 @@ const sendAuth = function writeAuth(result, httpRes) {
     httpRes.writeHead(403, {'Content-Type': 'application/json'});
     httpRes.end(JSON.stringify({ authorized: false }));
   }
-};
-
-const sendInternalError = function send500(httpRes) {
-  httpRes.writeHead(500);
-  httpRes.end();
-};
-
-const sendNotFound = function send404(httpRes) {
-  httpRes.writeHead(404);
-  httpRes.end();
 };
 
 const sendBadReq = function send400(httpRes) {
