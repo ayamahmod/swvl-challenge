@@ -90,7 +90,7 @@ app.get('/resource/', ((req, res) => {
 // POST /group
 app.post('/group', ((req, res) => {
   if (hasProp.call(req.body, 'name')) {
-    var group = { name: req.body.name };
+    let group = { name: req.body.name };
     if (hasProp.call(req.body, 'description')) {
       group.description = req.body.description;
     }
