@@ -4,13 +4,7 @@ The microservice is implemented in **Node.js** (v6.4.0), and **MongoDB** (v3.0.1
 To start the service:
  1. Install & Start MongoDB.
  2. Install Node.js.
- 3. Install the following dependencies: express, mongodb;
-  by running the following commands:
-
-    `npm install express`
-    
-    `npm install mongodb`
-
+ 3. cd into the project directory & run: `npm install`
  4. run authorization-control.js by the following command:
 
   `node authorization-control.js <port number to listen on> <MongoDB port>`
