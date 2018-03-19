@@ -5,6 +5,7 @@ To start the service:
  1. Install & Start MongoDB.
  2. Install Node.js.
  3. cd into the project directory & run: `npm install`
- 4. run authorization-control.js by the following command:
+ 4. Copy .env.example to .env, and change the embed your ports numbers.
+ 5. Start the microservice by the following command:
 
-  `node authorization-control.js <port number to listen on> <MongoDB port>`
+  `npm start`

@@ -30,33 +30,27 @@ module.exports = class MongoCollection {
     /** @member {string} */
     this.url = url;
 
-    /** @member {string} */
-    this.collectionName = collectionName;
+    mongo.connect(this.url).then((client) => {
+      this.docs = client.db('swvldb').collection(collectionName);
+    }).catch((err) => {
+      throw err;
+    });
   }
 
   /**
      * Inserts a document into the Mongo collection.
      * @param {object} doc - The document to be inserted.
      * @param {object} httpRes - The http response to write over.
+     * @TODO - Verify the data before insertion into DB.
      */
   insert(doc, httpRes) {
-    mongo.connect(this.url, ((err, client) => {
-      if (err) {
-        sendInternalError(httpRes);
-        throw err;
-      }
-      let docs = client.db('swvldb').collection(this.collectionName);
-      docs.insert(doc, ((err, result) => {
-        if (err) {
-          sendInternalError(httpRes);
-          throw err;
-        } else {
-          httpRes.writeHead(200, {'Content-Type': 'application/json'});
-          httpRes.end(JSON.stringify(result.ops[0]));
-        }
-        client.close();
-      }));
-    }));
+    this.docs.insert(doc).then((result) => {
+      httpRes.writeHead(200, {'Content-Type': 'application/json'});
+      httpRes.end(JSON.stringify(result.ops[0]));
+    }).catch((err) => {
+      sendInternalError(httpRes);
+      throw err;
+    });
   }
 
   /**
@@ -68,27 +62,23 @@ module.exports = class MongoCollection {
       results, and any additional args.
      * @param {string} args - Additional argument to pass to the @param callback.
      */
-  find(query, project, httpRes, callback, args = null) {
-    mongo.connect(this.url, ((err, client) => {
-      if (err) {
-        sendInternalError(httpRes);
-        throw err;
-      }
-      let docs = client.db('swvldb').collection(this.collectionName);
-      docs.find(query).project(project).toArray((err, result) => {
+  find(query, project, httpRes) {
+    return new Promise((resolve, reject) => {
+      this.docs.find(query).project(project).toArray().then((result) => {
+        if (result.length === 0) {
+          sendNotFound(httpRes);
+          reject('Query Not Found');
+        } else {
+          resolve(result);
+        }
+      }).catch((err) => {
         if (err) {
           sendInternalError(httpRes);
-          throw err;
-        } else if (result.length === 0) {
-          sendNotFound(httpRes);
-        } else {
-          callback(result, httpRes, args);
+          reject(err);
         }
-        client.close();
       });
-    }));
+    });
   }
-
   /**
      * Updates documents into the Mongo collection.
      * @param {object} query - The query object to be run over the collection.
@@ -96,26 +86,18 @@ module.exports = class MongoCollection {
      * @param {object} httpRes - The http response to write over.
      */
   update(query, update, httpRes) {
-    mongo.connect(this.url, ((err, client) => {
+    this.docs.updateOne(query, update).then((result) => {
+      if (result.result.n === 0) { // # Matched docs === 0
+        sendNotFound(httpRes);
+      } else {
+        httpRes.writeHead(204);
+        httpRes.end();
+      }
+    }).catch((err) => {
       if (err) {
         sendInternalError(httpRes);
         throw err;
       }
-      let docs = client.db('swvldb').collection(this.collectionName);
-      docs.updateOne(query, update, ((err, result) => {
-        if (err) {
-          sendInternalError(httpRes);
-          throw err;
-        } else {
-          if (result.result.n === 0) { // # Matched docs === 0
-            sendNotFound(httpRes);
-          } else {
-            httpRes.writeHead(204);
-            httpRes.end();
-          }
-        }
-        client.close();
-      }));
-    }));
+    });
   }
 };
