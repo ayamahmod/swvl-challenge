@@ -5,7 +5,7 @@ To start the service:
  1. Install & Start MongoDB.
  2. Install Node.js.
  3. cd into the project directory & run: `npm install`
- 4. Copy .env.example to .env, and change the embed your ports numbers.
+ 4. Copy .env.example to .env, and change the ports numbers according to yours.
  5. Start the microservice by the following command:
 
   `npm start`
