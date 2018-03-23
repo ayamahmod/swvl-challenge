@@ -1,5 +1,3 @@
-// https://scotch.io/tutorials/test-a-node-restful-api-with-mocha-and-chai
-// http://mherman.org/blog/2015/09/10/testing-node-js-with-mocha-and-chai/#.WrL4xnVuY8o
 /* global require describe it beforeEach process afterEach*/
 /* eslint-disable no-console */
 require('../config');
