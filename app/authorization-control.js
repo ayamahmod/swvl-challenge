@@ -85,7 +85,7 @@ const getRsourceNames = function qResourceNames(result, httpRes) {
 };
 
 const isAuthorized = function qAuthorization(result, httpRes, qUserId) {
-  if (result.length > 0) {
+  if (result && result.length > 0) {
     let query = { $and: [{ userIds: { $in: [{ userId: qUserId }] } },
       { resourceIds: { $in: [{ resourceId: result[0]['_id'].toString() }] } }] };
     let fields = {_id: 1};
