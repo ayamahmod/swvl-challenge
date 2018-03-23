@@ -9,6 +9,7 @@ To start the service:
  5. Start the microservice by the following command:
 
   `npm start`
+  
 6. To run the tests, use the following command:
 
   `npm test`
