@@ -1,5 +1,5 @@
 // index.js
 
 /* global require */
-require('dotenv').load();
+require('./config');
 require('./app/authorization-control');

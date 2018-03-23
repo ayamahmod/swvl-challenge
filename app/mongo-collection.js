@@ -5,16 +5,11 @@
  * @author Aya ElAttar <ayamahmoud1193@gmail.com>
  */
 
-/* global require */
+/* global require process*/
 const mongo = require('mongodb').MongoClient;
 
 const sendInternalError = function send500(httpRes) {
   httpRes.writeHead(500);
-  httpRes.end();
-};
-
-const sendNotFound = function send404(httpRes) {
-  httpRes.writeHead(404);
   httpRes.end();
 };
 
@@ -31,7 +26,7 @@ module.exports = class MongoCollection {
     this.url = url;
 
     mongo.connect(this.url).then((client) => {
-      this.docs = client.db('swvldb').collection(collectionName);
+      this.docs = client.db(process.env.DB_NAME).collection(collectionName);
     }).catch((err) => {
       throw err;
     });
@@ -65,12 +60,7 @@ module.exports = class MongoCollection {
   find(query, project, httpRes) {
     return new Promise((resolve, reject) => {
       this.docs.find(query).project(project).toArray().then((result) => {
-        if (result.length === 0) {
-          sendNotFound(httpRes);
-          reject('Query Not Found');
-        } else {
-          resolve(result);
-        }
+        resolve(result);
       }).catch((err) => {
         if (err) {
           sendInternalError(httpRes);
